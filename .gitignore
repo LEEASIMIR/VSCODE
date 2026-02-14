@@ -29,5 +29,8 @@ dist-ssr
 # Vite cache
 .vite/
 
+# Auto-generated zip (vite-plugin-zip)
+public/downloads/spring-jsp-extensions.zip
+
 # Windows artifacts
 nul

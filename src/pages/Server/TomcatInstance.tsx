@@ -1,56 +1,3 @@
-import { useState } from "react";
-
-const scriptContent = `@echo off
-chcp 65001 >nul
-setlocal
-
-REM ============================================================
-REM  Tomcat 인스턴스 등록 스크립트
-REM  - 현재 디렉토리를 프로젝트 경로로 사용
-REM  - CATALINA_HOME 공유, CATALINA_BASE 분리
-REM  - 개별 시작/종료 가능
-REM ============================================================
-REM
-REM  사용법:
-REM    프로젝트 폴더에서 실행:
-REM    init-tomcat-instance.bat [톰캣경로] [인스턴스명] [포트] [docBase폴더명] [JPDA포트]
-REM
-REM  예시:
-REM    cd D:\\Project\\speed\\AzureDevOpsRepo\\speedmate_admin
-REM    init-tomcat-instance.bat C:\\apache-tomcat-9.0.112 Admin 8083 web 10083
-REM
-REM    cd D:\\Project\\speed\\AzureDevOpsRepo\\speedmate_user
-REM    init-tomcat-instance.bat C:\\apache-tomcat-9.0.112 User 8080 web 10080
-REM
-
-REM === 파라미터 검증 ===
-if "%~4"=="" (
-    echo.
-    echo  [사용법] 프로젝트 폴더에서 실행
-    echo    %~nx0 [톰캣경로] [인스턴스명] [포트] [docBase폴더명] [JPDA포트]
-    echo.
-    echo  [예시]
-    echo    cd D:\\Project\\speedmate_admin
-    echo    %~nx0 C:\\apache-tomcat-9.0.112 Admin 8083 web 10083
-    echo.
-    echo  [파라미터]
-    echo    톰캣경로      : Tomcat 설치 루트 (CATALINA_HOME)
-    echo    인스턴스명    : 인스턴스 이름 (중복 불가, 영문)
-    echo    포트          : HTTP 포트 번호
-    echo    docBase폴더명 : JSP/정적파일 폴더 (예: web, src/main/webapp)
-    echo    JPDA포트      : 디버그 포트 (선택, 미지정시 HTTP포트+2000)
-    echo.
-    exit /b 1
-)
-
-set "TOMCAT_HOME=%~1"
-set "INSTANCE_NAME=%~2"
-set "PORT=%~3"
-set "DOCBASE_DIR=%~4"
-set "PROJECT_PATH=%CD%"
-
-...이하 생략 (전체 스크립트는 아래 섹션별 설명 참조)`;
-
 const sections = [
   {
     title: "개요",
@@ -249,15 +196,6 @@ public void newMethod() { ... }`,
 };
 
 export default function TomcatInstance() {
-  const [showScript, setShowScript] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(scriptContent);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div>
       <div className="mb-6 flex items-start justify-between">
@@ -426,47 +364,6 @@ export default function TomcatInstance() {
           </div>
         </div>
 
-        {/* 전체 스크립트 토글 */}
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <button
-            onClick={() => setShowScript(!showScript)}
-            className="flex w-full items-center justify-between p-5 text-left"
-          >
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              전체 스크립트 보기
-            </h3>
-            <svg
-              className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                showScript ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-          {showScript && (
-            <div className="border-t border-gray-200 p-5 dark:border-gray-700">
-              <div className="mb-3 flex justify-end">
-                <button
-                  onClick={handleCopy}
-                  className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600"
-                >
-                  {copied ? "복사됨" : "복사"}
-                </button>
-              </div>
-              <pre className="max-h-[500px] overflow-auto rounded-lg bg-gray-900 p-4 text-xs leading-relaxed text-gray-100">
-                <code>{scriptContent}</code>
-              </pre>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

@@ -18,14 +18,14 @@ const navItems: NavItem[] = [
       { name: "단축키", path: "/vscode/shortcuts" },
       { name: "유용한 설정", path: "/vscode/settings" },
       { name: "사용자 스니펫", path: "/vscode/snippets" },
+      { name: "프로필 설정", path: "/vscode/profiles" },
     ],
   },
   {
     icon: <PlugInIcon />,
     name: "Plugin",
     subItems: [
-      { name: "Spring + JSP SET", path: "/plugin/spring-jsp" },
-      { name: "오프라인 설치 방법", path: "/plugin/offline-install" },
+{ name: "오프라인 설치 방법", path: "/plugin/offline-install" },
       { name: "DB Tool", path: "/plugin/db-tool" },
     ],
   },

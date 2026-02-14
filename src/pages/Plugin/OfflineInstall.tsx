@@ -1,5 +1,210 @@
 import { useState } from "react";
 
+function VsixConverter() {
+  const [marketplaceUrl, setMarketplaceUrl] = useState("");
+  const [downloadInfo, setDownloadInfo] = useState<{
+    url: string;
+    filename: string;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+
+  const parse = (input: string) => {
+    // URL 형식: https://marketplace.visualstudio.com/items?itemName=redhat.java
+    const urlMatch = input.match(/itemName=([^&]+)/i);
+    if (urlMatch) {
+      const parts = urlMatch[1].split(".");
+      if (parts.length >= 2)
+        return { publisher: parts[0], name: parts.slice(1).join(".") };
+    }
+    // Extension ID 형식: redhat.java
+    const idMatch = input.trim().match(/^([^.]+)\.(.+)$/);
+    if (idMatch) return { publisher: idMatch[1], name: idMatch[2] };
+    return null;
+  };
+
+  const handleConvert = () => {
+    setError("");
+    setDownloadInfo(null);
+
+    const parsed = parse(marketplaceUrl);
+    if (!parsed) {
+      setError(
+        "올바른 Marketplace URL 또는 Extension ID를 입력해주세요.\n예: https://marketplace.visualstudio.com/items?itemName=redhat.java\n예: redhat.java"
+      );
+      return;
+    }
+
+    const { publisher, name } = parsed;
+    const url = `https://${publisher}.gallery.vsassets.io/_apis/public/gallery/publisher/${publisher}/extension/${name}/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage`;
+    setDownloadInfo({ url, filename: `${publisher}.${name}.vsix` });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleConvert();
+  };
+
+  const handleDownload = async () => {
+    if (!downloadInfo) return;
+    setDownloading(true);
+    try {
+      const res = await fetch(downloadInfo.url);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = downloadInfo.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      window.open(downloadInfo.url, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleCopyUrl = async () => {
+    if (!downloadInfo) return;
+    await navigator.clipboard.writeText(downloadInfo.url);
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 dark:border-blue-800 dark:bg-blue-950/40">
+      <h3 className="mb-1 text-base font-semibold text-gray-900 dark:text-white">
+        VSIX 다운로드 변환기
+      </h3>
+      <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+        Marketplace 링크 또는 Extension ID를 입력하면 VSIX 파일을 바로 다운로드할
+        수 있다.
+      </p>
+
+      {/* 입력 */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={marketplaceUrl}
+          onChange={(e) => setMarketplaceUrl(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="https://marketplace.visualstudio.com/items?itemName=redhat.java"
+          className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+        />
+        <button
+          onClick={handleConvert}
+          className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+        >
+          변환
+        </button>
+      </div>
+
+      {/* 에러 */}
+      {error && (
+        <p className="mt-2 whitespace-pre-line text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+
+      {/* 결과 */}
+      {downloadInfo && (
+        <div className="mt-4 space-y-3">
+          {/* 파일명 */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              파일명:
+            </span>
+            <code className="rounded bg-gray-200 px-2 py-0.5 text-sm font-semibold text-gray-900 dark:bg-gray-700 dark:text-white">
+              {downloadInfo.filename}
+            </code>
+          </div>
+
+          {/* 다운로드 URL */}
+          <div>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              다운로드 URL:
+            </span>
+            <div className="mt-1 flex gap-2">
+              <pre className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-gray-900 p-3 text-xs leading-relaxed text-gray-100">
+                <code>{downloadInfo.url}</code>
+              </pre>
+              <button
+                onClick={handleCopyUrl}
+                className="shrink-0 self-start rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+              >
+                {urlCopied ? "복사됨" : "복사"}
+              </button>
+            </div>
+          </div>
+
+          {/* 다운로드 버튼 */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {downloading ? (
+              <>
+                <svg
+                  className="h-4 w-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                다운로드 중...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+                {downloadInfo.filename} 다운로드
+              </>
+            )}
+          </button>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            CORS 제한으로 직접 다운로드가 안 될 경우, 위 URL을 브라우저
+            주소창에 붙여넣으면 다운로드된다. 이때 파일명이{" "}
+            <code className="rounded bg-gray-200 px-1 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              Microsoft.VisualStudio.Services.VSIXPackage
+            </code>
+            로 저장되므로, 위에 표시된 파일명(
+            <code className="rounded bg-gray-200 px-1 font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              {downloadInfo.filename}
+            </code>
+            )으로 직접 변경해야 한다.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const steps = [
   {
     title: "1. VSIX 파일 다운로드",
@@ -113,95 +318,7 @@ Linux   : ~/.vscode/extensions/
   },
 ];
 
-const batchScript = `@echo off
-chcp 65001 >nul
-setlocal
-
-REM ============================================================
-REM  VS Code 확장 프로그램 일괄 설치 스크립트
-REM  지정된 폴더 내 모든 .vsix 파일을 설치한다.
-REM ============================================================
-REM
-REM  사용법:
-REM    install-extensions.bat [vsix파일들이 있는 폴더]
-REM
-REM  예시:
-REM    install-extensions.bat C:\\Downloads\\vsix
-
-if "%~1"=="" (
-    echo.
-    echo  [사용법] install-extensions.bat [vsix 폴더 경로]
-    echo  [예시]   install-extensions.bat C:\\Downloads\\vsix
-    echo.
-    exit /b 1
-)
-
-set "VSIX_DIR=%~1"
-
-if not exist "%VSIX_DIR%" (
-    echo [오류] 폴더를 찾을 수 없습니다: %VSIX_DIR%
-    exit /b 1
-)
-
-echo.
-echo ========================================
-echo  VS Code 확장 프로그램 일괄 설치
-echo  대상 폴더: %VSIX_DIR%
-echo ========================================
-echo.
-
-set COUNT=0
-for %%f in ("%VSIX_DIR%\\*.vsix") do (
-    set /a COUNT+=1
-    echo [설치 중] %%~nxf
-    code --install-extension "%%f"
-    if errorlevel 1 (
-        echo [실패] %%~nxf
-    ) else (
-        echo [완료] %%~nxf
-    )
-    echo.
-)
-
-if %COUNT%==0 (
-    echo [알림] .vsix 파일이 없습니다.
-) else (
-    echo ========================================
-    echo  설치 완료: %COUNT%개 파일 처리
-    echo ========================================
-)
-
-echo.
-echo [설치된 확장 목록]
-code --list-extensions
-
-endlocal`;
-
-const commonDeps = [
-  {
-    name: "Spring + JSP SET 전체",
-    extensions: [
-      "redhat.java",
-      "vscjava.vscode-java-debug",
-      "vscjava.vscode-java-dependency",
-      "vscjava.vscode-maven",
-      "redhat.vscode-xml",
-      "formulahendry.auto-rename-tag",
-      "esbenp.prettier-vscode",
-    ],
-  },
-];
-
 export default function OfflineInstall() {
-  const [showScript, setShowScript] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(batchScript);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div>
       <div className="mb-6">
@@ -211,6 +328,42 @@ export default function OfflineInstall() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           인터넷이 차단된 환경에서 VS Code 확장 프로그램을 설치하는 방법
         </p>
+      </div>
+
+      {/* VSIX 다운로드 변환기 */}
+      <div className="mb-6">
+        <VsixConverter />
+      </div>
+
+      {/* 일괄 설치 스크립트 다운로드 */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-white">
+          일괄 설치 스크립트
+        </h3>
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          VSIX 파일이 들어있는 폴더를 인자로 넘기면, 폴더 내 모든 .vsix 파일을
+          자동으로 설치한다.
+        </p>
+        <a
+          href="/downloads/install-extensions.bat"
+          download="install-extensions.bat"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
+          </svg>
+          install-extensions.bat 다운로드
+        </a>
       </div>
 
       {/* 단계별 가이드 */}
@@ -251,74 +404,7 @@ export default function OfflineInstall() {
           </div>
         ))}
 
-        {/* 일괄 설치용 확장 목록 */}
-        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-          <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-white">
-            참고: 확장 프로그램 다운로드 목록
-          </h3>
-          <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-            아래 Extension ID를 Marketplace에서 검색하여 VSIX 파일을 다운로드한다.
-          </p>
-          {commonDeps.map((group) => (
-            <div key={group.name}>
-              <h4 className="mb-2 text-sm font-medium text-gray-800 dark:text-gray-200">
-                {group.name}
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {group.extensions.map((ext) => (
-                  <code
-                    key={ext}
-                    className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                  >
-                    {ext}
-                  </code>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
 
-        {/* 일괄 설치 스크립트 */}
-        <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-          <button
-            onClick={() => setShowScript(!showScript)}
-            className="flex w-full items-center justify-between p-5 text-left"
-          >
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              일괄 설치 스크립트 (install-extensions.bat)
-            </h3>
-            <svg
-              className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                showScript ? "rotate-180" : ""
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-          {showScript && (
-            <div className="border-t border-gray-200 p-5 dark:border-gray-700">
-              <div className="mb-3 flex justify-end">
-                <button
-                  onClick={handleCopy}
-                  className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-600"
-                >
-                  {copied ? "복사됨" : "복사"}
-                </button>
-              </div>
-              <pre className="max-h-[500px] overflow-auto rounded-lg bg-gray-900 p-4 text-xs leading-relaxed text-gray-100">
-                <code>{batchScript}</code>
-              </pre>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

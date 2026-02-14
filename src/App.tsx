@@ -19,13 +19,13 @@ import AppLayout from "./layout/AppLayout";
 import MainLayout from "./layout/MainLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
-import SpringJspSet from "./pages/Plugin/SpringJspSet";
 import TomcatInstance from "./pages/Server/TomcatInstance";
 import OfflineInstall from "./pages/Plugin/OfflineInstall";
 import DBTool from "./pages/Plugin/DBTool";
 import Shortcuts from "./pages/VscodeBasic/Shortcuts";
 import UsefulSettings from "./pages/VscodeBasic/UsefulSettings";
 import UserSnippets from "./pages/VscodeBasic/UserSnippets";
+import Profiles from "./pages/VscodeBasic/Profiles";
 
 export default function App() {
   return (
@@ -39,7 +39,7 @@ export default function App() {
             <Route path="vscode/shortcuts" element={<Shortcuts />} />
             <Route path="vscode/settings" element={<UsefulSettings />} />
             <Route path="vscode/snippets" element={<UserSnippets />} />
-            <Route path="plugin/spring-jsp" element={<SpringJspSet />} />
+            <Route path="vscode/profiles" element={<Profiles />} />
             <Route path="plugin/offline-install" element={<OfflineInstall />} />
             <Route path="plugin/db-tool" element={<DBTool />} />
             <Route path="server/tomcat-instance" element={<TomcatInstance />} />
