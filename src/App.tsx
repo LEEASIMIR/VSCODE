@@ -26,6 +26,10 @@ import Shortcuts from "./pages/VscodeBasic/Shortcuts";
 import UsefulSettings from "./pages/VscodeBasic/UsefulSettings";
 import UserSnippets from "./pages/VscodeBasic/UserSnippets";
 import Profiles from "./pages/VscodeBasic/Profiles";
+import MarkdownGuide from "./pages/SyntaxReference/MarkdownGuide";
+import MermaidGuide from "./pages/SyntaxReference/MermaidGuide";
+import MarkdownPlayground from "./pages/SyntaxReference/MarkdownPlayground";
+import MermaidPlayground from "./pages/SyntaxReference/MermaidPlayground";
 
 export default function App() {
   return (
@@ -43,6 +47,10 @@ export default function App() {
             <Route path="plugin/offline-install" element={<OfflineInstall />} />
             <Route path="plugin/db-tool" element={<DBTool />} />
             <Route path="server/tomcat-instance" element={<TomcatInstance />} />
+            <Route path="syntax/markdown" element={<MarkdownGuide />} />
+            <Route path="syntax/mermaid" element={<MermaidGuide />} />
+            <Route path="syntax/playground" element={<MarkdownPlayground />} />
+            <Route path="syntax/mermaid-playground" element={<MermaidPlayground />} />
           </Route>
 
           {/* Template Dashboard Layout */}

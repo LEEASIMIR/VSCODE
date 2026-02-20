@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { BoltIcon, ChevronDownIcon, DocsIcon, HorizontaLDots, PlugInIcon, VscodeIcon } from "../icons";
+import { BoltIcon, ChevronDownIcon, DocsIcon, FileIcon, HorizontaLDots, PlugInIcon, VscodeIcon } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 
 type NavItem = {
@@ -33,6 +33,16 @@ const navItems: NavItem[] = [
     icon: <BoltIcon />,
     name: "서버실행",
     subItems: [{ name: "톰캣 인스턴스", path: "/server/tomcat-instance" }],
+  },
+  {
+    icon: <FileIcon />,
+    name: "Syntax Reference",
+    subItems: [
+      { name: "Markdown", path: "/syntax/markdown" },
+      { name: "Mermaid", path: "/syntax/mermaid" },
+      { name: "MD Playground", path: "/syntax/playground" },
+      { name: "Mermaid Playground", path: "/syntax/mermaid-playground" },
+    ],
   },
 ];
 
